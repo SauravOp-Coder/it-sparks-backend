@@ -25,7 +25,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow requests without Origin header (Postman, server-to-server)
+      // Allow Postman/server requests with no Origin header
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -37,7 +37,6 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
