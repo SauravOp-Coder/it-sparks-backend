@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import cors from "cors";
+
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import { connectCloudinary } from "./config/cloudinary.js";
@@ -14,7 +16,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://itsparks.vercel.app",
+      "https://it-sparks-frontend.vercel.app", // <-- your actual frontend URL
     ],
     credentials: true,
   })
