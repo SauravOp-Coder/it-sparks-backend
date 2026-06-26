@@ -17,26 +17,8 @@ import bannerRoutes from "./routes/bannerRoutes.js";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://it-sparks-frontend.vercel.app",
-];
+app.use(cors());
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      // Allow Postman/server requests with no Origin header
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
