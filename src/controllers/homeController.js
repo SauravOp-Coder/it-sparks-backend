@@ -40,6 +40,82 @@ const parseRecruitersText = (text) => {
     .filter((item) => item.length > 0);
 };
 
+const normalizeSectionType = (type) => {
+  const value = String(type || "").toLowerCase();
+
+  if (value === "heading") return "heading";
+  if (value === "paragraph") return "paragraph";
+  if (value === "list") return "bulletList";
+  if (value === "bulletlist") return "bulletList";
+  if (value === "bullet") return "bulletList";
+  if (value === "numberedlist") return "numberedList";
+  if (value === "numbered") return "numberedList";
+  if (value === "highlight") return "highlight";
+
+  return "paragraph";
+};
+
+const parseHomeSections = (value) => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((section, index) => {
+        const type = normalizeSectionType(section.type);
+
+        return {
+          type,
+          title: section.title || "",
+          content: section.content || "",
+          items: Array.isArray(section.items)
+            ? section.items.filter(Boolean)
+            : section.itemsText
+            ? section.itemsText
+                .split("\n")
+                .map((item) => item.trim())
+                .filter(Boolean)
+            : [],
+          textCase: section.textCase || "normal",
+          layout: section.layout || "full",
+          order: index,
+        };
+      })
+      .filter((section) => {
+        if (section.type === "bulletList" || section.type === "numberedList") {
+          return section.items.length > 0;
+        }
+
+        return section.title || section.content;
+      });
+  } catch (error) {
+    return [];
+  }
+};
+
+const parseFaqs = (value) => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((faq, index) => ({
+        question: faq.question || "",
+        answer: faq.answer || "",
+        order: index,
+      }))
+      .filter((faq) => faq.question || faq.answer);
+  } catch (error) {
+    return [];
+  }
+};
+
 const getHomeContent = async (req, res) => {
   let homeContent = await HomeContent.findOne();
 
@@ -108,6 +184,14 @@ const updateHomeContent = async (req, res) => {
 
   if (req.body.recruitersText !== undefined) {
     homeContent.recruiters = parseRecruitersText(req.body.recruitersText);
+  }
+
+  if (req.body.homeSections !== undefined) {
+    homeContent.homeSections = parseHomeSections(req.body.homeSections);
+  }
+
+  if (req.body.faqs !== undefined) {
+    homeContent.faqs = parseFaqs(req.body.faqs);
   }
 
   // 3. Handle image upload if present
