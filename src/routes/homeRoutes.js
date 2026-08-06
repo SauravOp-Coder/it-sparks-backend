@@ -1,14 +1,9 @@
 import express from "express";
-import {
-  getHomeContent,
-  updateHomeContent,
-} from "../controllers/homeController.js";
-import { protectAdmin } from "../middleware/authMiddleware.js";
-import upload from "../middleware/uploadMiddleware.js";
+import { getHomeContent, updateHomeContent } from "../controllers/homeController.js";
 
 const router = express.Router();
 
 router.get("/", getHomeContent);
-router.put("/", protectAdmin, upload.single("heroImage"), updateHomeContent);
+router.put("/", updateHomeContent); // Pure JSON route - no file parsing needed
 
 export default router;
