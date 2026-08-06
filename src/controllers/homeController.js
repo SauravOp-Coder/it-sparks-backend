@@ -106,8 +106,9 @@ const parseFaqs = (value) => {
 
     return parsed
       .map((faq, index) => ({
-        question: faq.question || "",
-        answer: faq.answer || "",
+        question:
+          faq.question || faq.faqQuestion || faq.questionText || "",
+        answer: faq.answer || faq.faqAnswer || faq.answerText || "",
         order: index,
       }))
       .filter((faq) => faq.question || faq.answer);
