@@ -28,23 +28,28 @@ const homeContentSchema = new mongoose.Schema(
     faqTitle: { type: String, default: "" },
     faqSubtitle: { type: String, default: "" },
 
-    // Text storage fields
+    // String representations for plain text fields
     whyChooseCardsText: { type: String, default: "" },
     trainingStepsText: { type: String, default: "" },
     placementSupportCardsText: { type: String, default: "" },
     recruitersText: { type: String, default: "" },
-    faqsText: { type: String, default: "" },
-    sectionsText: { type: String, default: "" },
 
-    // Parsed Array outputs
+    // Standard parsed arrays
     whyChooseCards: { type: Array, default: [] },
     trainingSteps: { type: Array, default: [] },
     placementSupportCards: { type: Array, default: [] },
     recruiters: { type: Array, default: [] },
-    faqs: { type: Array, default: [] },
-    sections: { type: Array, default: [] },
+
+    // Explicit FAQ schema definition
+    faqs: [
+      {
+        question: { type: String, default: "" },
+        answer: { type: String, default: "" },
+        order: { type: Number, default: 0 },
+      },
+    ],
   },
-  { timestamps: true, strict: false } // strict: false stops Mongoose from dropping fields!
+  { timestamps: true, strict: false }
 );
 
 export default mongoose.model("HomeContent", homeContentSchema);
