@@ -1,6 +1,6 @@
 import HomeContent from "../models/HomeContent.js";
 
-// Parser for FAQs (Format per line: Question | Answer)
+// Helper: Parse Question | Answer lines
 const parseFaqsText = (text) => {
   if (!text || typeof text !== "string") return [];
   return text
@@ -12,6 +12,24 @@ const parseFaqsText = (text) => {
       return {
         question: question?.trim() || "",
         answer: answerParts.join("|").trim() || "",
+        order: idx,
+      };
+    });
+};
+
+// Helper: Parse Key | Title | Enabled lines for sections
+const parseSectionsText = (text) => {
+  if (!text || typeof text !== "string") return [];
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, idx) => {
+      const [key, title, enabled] = line.split("|");
+      return {
+        key: key?.trim() || `section_${idx}`,
+        title: title?.trim() || "",
+        enabled: enabled ? enabled.trim() === "true" : true,
         order: idx,
       };
     });
@@ -31,9 +49,12 @@ export const getHomeContent = async (req, res) => {
 
 export const updateHomeContent = async (req, res) => {
   try {
+    console.log("--- DEBUG: RECEIVED BODY IN CONTROLLER ---");
+    console.log(req.body);
+
     const updateData = { ...req.body };
 
-    // Parse cards, recruiters, and steps
+    // 1. Process Cards & Recruiters
     if (typeof updateData.whyChooseCardsText === "string") {
       updateData.whyChooseCards = updateData.whyChooseCardsText
         .split("\n")
@@ -71,16 +92,30 @@ export const updateHomeContent = async (req, res) => {
         .filter(Boolean);
     }
 
-    // CONVERT FAQS TEXT TO ARRAY (Exact same method as cards)
+    // 2. Process FAQs Text
     if (typeof updateData.faqsText === "string") {
       updateData.faqs = parseFaqsText(updateData.faqsText);
+    } else if (Array.isArray(updateData.faqs)) {
+      updateData.faqs = updateData.faqs;
     }
 
+    // 3. Process Sections Text
+    if (typeof updateData.sectionsText === "string") {
+      updateData.sections = parseSectionsText(updateData.sectionsText);
+    } else if (Array.isArray(updateData.sections)) {
+      updateData.sections = updateData.sections;
+    }
+
+    // Save directly with MongoDB driver bypassing strict Mongoose casting
     const updatedContent = await HomeContent.findOneAndUpdate(
       {},
       { $set: updateData },
-      { new: true, upsert: true, runValidators: false }
+      { new: true, upsert: true, strict: false }
     );
+
+    console.log("--- DEBUG: SAVED DB RESULT ---");
+    console.log("FAQS:", updatedContent.faqs);
+    console.log("SECTIONS:", updatedContent.sections);
 
     res.status(200).json({
       success: true,

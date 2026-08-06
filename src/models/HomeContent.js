@@ -1,18 +1,5 @@
 import mongoose from "mongoose";
 
-const faqSchema = new mongoose.Schema({
-  question: { type: String, default: "" },
-  answer: { type: String, default: "" },
-  order: { type: Number, default: 0 },
-});
-
-const sectionSchema = new mongoose.Schema({
-  key: { type: String, required: true },
-  title: { type: String, default: "" },
-  enabled: { type: Boolean, default: true },
-  order: { type: Number, default: 0 },
-});
-
 const homeContentSchema = new mongoose.Schema(
   {
     heroBadge: { type: String, default: "" },
@@ -22,6 +9,7 @@ const homeContentSchema = new mongoose.Schema(
     primaryButtonLink: { type: String, default: "" },
     secondaryButtonText: { type: String, default: "" },
     secondaryButtonLink: { type: String, default: "" },
+
     popularCoursesTitle: { type: String, default: "" },
     popularCoursesSubtitle: { type: String, default: "" },
     whyChooseTitle: { type: String, default: "" },
@@ -36,23 +24,27 @@ const homeContentSchema = new mongoose.Schema(
     ctaSubtitle: { type: String, default: "" },
     ctaButtonText: { type: String, default: "" },
     ctaButtonLink: { type: String, default: "" },
+
     faqTitle: { type: String, default: "" },
     faqSubtitle: { type: String, default: "" },
 
+    // Text storage fields
+    whyChooseCardsText: { type: String, default: "" },
+    trainingStepsText: { type: String, default: "" },
+    placementSupportCardsText: { type: String, default: "" },
+    recruitersText: { type: String, default: "" },
+    faqsText: { type: String, default: "" },
+    sectionsText: { type: String, default: "" },
+
+    // Parsed Array outputs
     whyChooseCards: { type: Array, default: [] },
     trainingSteps: { type: Array, default: [] },
     placementSupportCards: { type: Array, default: [] },
     recruiters: { type: Array, default: [] },
-
-    heroImage: {
-      url: { type: String, default: "" },
-      publicId: { type: String, default: "" },
-    },
-
-    sections: [sectionSchema],
-    faqs: [faqSchema],
+    faqs: { type: Array, default: [] },
+    sections: { type: Array, default: [] },
   },
-  { timestamps: true }
+  { timestamps: true, strict: false } // strict: false stops Mongoose from dropping fields!
 );
 
 export default mongoose.model("HomeContent", homeContentSchema);
