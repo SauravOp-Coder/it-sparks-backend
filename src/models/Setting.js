@@ -34,30 +34,6 @@ youtubeLink: { type: String, default: "" },
       type: String,
       default: "",
     },
-    seoTitle: {
-      type: String,
-      default: "IT Sparks Technologies | Practical IT Training",
-    },
-    seoDescription: {
-      type: String,
-      default: "IT Sparks Technologies provides practical IT training, AI courses, software development programs, and placement support for students and professionals.",
-    },
-    seoKeywords: {
-      type: String,
-      default: "IT training, software courses, AI training, data science, cloud computing, placement support, practical learning",
-    },
-    seoImage: {
-      type: String,
-      default: "/og-image.jpg",
-    },
-    seoCanonicalBase: {
-      type: String,
-      default: "https://itsparkstechnologies.com",
-    },
-    siteName: {
-      type: String,
-      default: "IT Sparks Technologies",
-    },
     socialLinks: {
       facebook: {
         type: String,
