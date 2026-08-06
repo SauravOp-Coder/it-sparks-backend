@@ -105,6 +105,16 @@ const parseFaqs = (value) => {
     return [];
   };
 
+  const readFirstValue = (item, keys) => {
+    for (const key of keys) {
+      const candidate = item?.[key];
+      if (candidate !== undefined && candidate !== null && candidate !== "") {
+        return String(candidate).trim();
+      }
+    }
+    return "";
+  };
+
   const parseFaqItem = (item) => {
     if (!item) return { question: "", answer: "" };
 
@@ -123,9 +133,32 @@ const parseFaqs = (value) => {
       };
     }
 
+    if (typeof item === "object") {
+      const question = readFirstValue(item, [
+        "question",
+        "faqQuestion",
+        "questionText",
+        "title",
+        "faq",
+      ]);
+      const answer = readFirstValue(item, [
+        "answer",
+        "faqAnswer",
+        "answerText",
+        "description",
+        "content",
+        "details",
+      ]);
+
+      return {
+        question,
+        answer,
+      };
+    }
+
     return {
-      question: item?.question ? String(item.question).trim() : "",
-      answer: item?.answer ? String(item.answer).trim() : "",
+      question: "",
+      answer: "",
     };
   };
 
@@ -257,4 +290,4 @@ const updateHomeContent = async (req, res) => {
   });
 };
 
-export { getHomeContent, updateHomeContent };
+export { getHomeContent, updateHomeContent, parseFaqs };
