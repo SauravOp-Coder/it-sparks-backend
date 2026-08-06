@@ -1,96 +1,67 @@
 import HomeContent from "../models/HomeContent.js";
 
-// Helper utilities to parse the incoming text strings back into database-ready structures
-const parseCardsText = (text) => {
-  if (!text || typeof text !== "string") return [];
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const [title, ...textParts] = line.split("|");
-      return {
-        title: title ? title.trim() : "",
-        text: textParts.length ? textParts.join("|").trim() : "",
-      };
+const ensureHomeContent = async () => {
+  let homeContent = await HomeContent.findOne();
+
+  if (!homeContent) {
+    homeContent = await HomeContent.create({
+      hero: {
+        buttons: [
+          { text: "Explore Courses", link: "/courses", style: "primary", order: 0 },
+          { text: "Book Free Demo", link: "/contact", style: "secondary", order: 1 },
+        ],
+      },
+      popularCourses: {},
+      cta: {},
     });
+  }
+
+  return homeContent;
 };
 
-const parseTrainingText = (text) => {
-  if (!text || typeof text !== "string") return [];
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const [number, title, ...textParts] = line.split("|");
-      return {
-        number: number ? number.trim() : "",
-        title: title ? title.trim() : "",
-        text: textParts.length ? textParts.join("|").trim() : "",
-      };
-    });
-};
-
-const parseRecruitersText = (text) => {
-  if (!text || typeof text !== "string") return [];
-  return text
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-};
-
-const normalizeSectionType = (type) => {
-  const value = String(type || "").toLowerCase();
-
-  if (value === "heading") return "heading";
-  if (value === "paragraph") return "paragraph";
-  if (value === "list") return "bulletList";
-  if (value === "bulletlist") return "bulletList";
-  if (value === "bullet") return "bulletList";
-  if (value === "numberedlist") return "numberedList";
-  if (value === "numbered") return "numberedList";
-  if (value === "highlight") return "highlight";
-
-  return "paragraph";
-};
-
-const parseHomeSections = (value) => {
+const parseButtons = (value) => {
   if (!value) return [];
 
   try {
-    const parsed = JSON.parse(value);
+    const buttons = Array.isArray(value) ? value : JSON.parse(value);
+    return buttons
+      .filter((button) => button && button.text)
+      .map((button, index) => ({
+        text: button.text || "",
+        link: button.link || "/",
+        style: button.style || "primary",
+        order: typeof button.order === "number" ? button.order : index,
+      }));
+  } catch (error) {
+    return [];
+  }
+};
 
-    if (!Array.isArray(parsed)) return [];
+const parseSections = (value) => {
+  if (!value) return [];
 
-    return parsed
-      .map((section, index) => {
-        const type = normalizeSectionType(section.type);
+  try {
+    const sections = Array.isArray(value) ? value : JSON.parse(value);
 
-        return {
-          type,
-          title: section.title || "",
-          content: section.content || "",
-          items: Array.isArray(section.items)
-            ? section.items.filter(Boolean)
-            : section.itemsText
-            ? section.itemsText
-                .split("\n")
-                .map((item) => item.trim())
-                .filter(Boolean)
-            : [],
-          textCase: section.textCase || "normal",
-          layout: section.layout || "full",
-          order: index,
-        };
-      })
-      .filter((section) => {
-        if (section.type === "bulletList" || section.type === "numberedList") {
-          return section.items.length > 0;
-        }
+    if (!Array.isArray(sections)) return [];
 
-        return section.title || section.content;
-      });
+    return sections
+      .map((section, index) => ({
+        sectionType: section.sectionType || section.type || "paragraph",
+        enabled: section.enabled !== false,
+        title: section.title || "",
+        subtitle: section.subtitle || "",
+        content: section.content || "",
+        items: Array.isArray(section.items)
+          ? section.items.filter((item) => typeof item === "string" && item.trim())
+          : [],
+        textCase: section.textCase || "normal",
+        layout: section.layout || "full",
+        image: section.image || null,
+        buttons: parseButtons(section.buttons),
+        order: typeof section.order === "number" ? section.order : index,
+      }))
+      .filter((section) => section.title || section.content || section.items.length || section.image?.url);
   } catch (error) {
     return [];
   }
@@ -100,16 +71,16 @@ const parseFaqs = (value) => {
   if (!value) return [];
 
   try {
-    const parsed = JSON.parse(value);
+    const faqs = Array.isArray(value) ? value : JSON.parse(value);
 
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(faqs)) return [];
 
-    return parsed
+    return faqs
       .map((faq, index) => ({
-        question:
-          faq.question || faq.faqQuestion || faq.questionText || "",
+        question: faq.question || faq.faqQuestion || faq.questionText || "",
         answer: faq.answer || faq.faqAnswer || faq.answerText || "",
-        order: index,
+        enabled: faq.enabled !== false,
+        order: typeof faq.order === "number" ? faq.order : index,
       }))
       .filter((faq) => faq.question || faq.answer);
   } catch (error) {
@@ -118,11 +89,7 @@ const parseFaqs = (value) => {
 };
 
 const getHomeContent = async (req, res) => {
-  let homeContent = await HomeContent.findOne();
-
-  if (!homeContent) {
-    homeContent = await HomeContent.create({});
-  }
+  const homeContent = await ensureHomeContent();
 
   res.status(200).json({
     success: true,
@@ -131,85 +98,52 @@ const getHomeContent = async (req, res) => {
 };
 
 const updateHomeContent = async (req, res) => {
-  let homeContent = await HomeContent.findOne();
+  const homeContent = await ensureHomeContent();
 
-  if (!homeContent) {
-    homeContent = await HomeContent.create({});
+  const payload = req.body || {};
+
+  if (payload.hero) {
+    homeContent.hero.badge = payload.hero.badge || homeContent.hero.badge;
+    homeContent.hero.heading = payload.hero.heading || homeContent.hero.heading;
+    homeContent.hero.subheading = payload.hero.subheading || homeContent.hero.subheading;
+    homeContent.hero.buttons = parseButtons(payload.hero.buttons || homeContent.hero.buttons);
   }
 
-  const fields = [
-    "heroBadge",
-    "heroHeading",
-    "heroSubheading",
-    "primaryButtonText",
-    "primaryButtonLink",
-    "secondaryButtonText",
-    "secondaryButtonLink",
-    "popularCoursesTitle",
-    "popularCoursesSubtitle",
-    "whyChooseTitle",
-    "whyChooseSubtitle",
-    "trainingTitle",
-    "trainingSubtitle",
-    "placementTitle",
-    "placementSubtitle",
-    "recruiterTitle",
-    "recruiterSubtitle",
-    "ctaTitle",
-    "ctaSubtitle",
-    "ctaButtonText",
-    "ctaButtonLink",
-  ];
-
-  // 1. Update basic text fields
-  fields.forEach((field) => {
-    if (req.body[field] !== undefined) {
-      homeContent[field] = req.body[field];
-    }
-  });
-
-  // 2. Parse and update complex array/object fields from text inputs
-  if (req.body.whyChooseCardsText !== undefined) {
-    homeContent.whyChooseCards = parseCardsText(req.body.whyChooseCardsText);
+  if (payload.popularCourses) {
+    homeContent.popularCourses.title = payload.popularCourses.title || homeContent.popularCourses.title;
+    homeContent.popularCourses.subtitle = payload.popularCourses.subtitle || homeContent.popularCourses.subtitle;
   }
 
-  if (req.body.trainingStepsText !== undefined) {
-    homeContent.trainingSteps = parseTrainingText(req.body.trainingStepsText);
+  if (payload.sections !== undefined) {
+    homeContent.sections = parseSections(payload.sections);
   }
 
-  if (req.body.placementSupportCardsText !== undefined) {
-    homeContent.placementSupportCards = parseCardsText(
-      req.body.placementSupportCardsText
-    );
+  if (payload.faqs !== undefined) {
+    homeContent.faqs = parseFaqs(payload.faqs);
   }
 
-  if (req.body.recruitersText !== undefined) {
-    homeContent.recruiters = parseRecruitersText(req.body.recruitersText);
+  if (payload.cta) {
+    homeContent.cta.enabled = payload.cta.enabled !== undefined ? payload.cta.enabled : homeContent.cta.enabled;
+    homeContent.cta.title = payload.cta.title || homeContent.cta.title;
+    homeContent.cta.subtitle = payload.cta.subtitle || homeContent.cta.subtitle;
+    homeContent.cta.buttonText = payload.cta.buttonText || homeContent.cta.buttonText;
+    homeContent.cta.buttonLink = payload.cta.buttonLink || homeContent.cta.buttonLink;
   }
 
-  if (req.body.homeSections !== undefined) {
-    homeContent.homeSections = parseHomeSections(req.body.homeSections);
-  }
-
-  if (req.body.faqs !== undefined) {
-    homeContent.faqs = parseFaqs(req.body.faqs);
-  }
-
-  // 3. Handle image upload if present
   if (req.file) {
-    homeContent.heroImage = {
+    homeContent.hero.image = {
       url: req.file.path,
       publicId: req.file.filename,
     };
   }
 
-  const updatedHomeContent = await homeContent.save();
+  await homeContent.save();
 
   res.status(200).json({
     success: true,
     message: "Home content updated successfully",
-    homeContent: updatedHomeContent,
+    homeContent,
   });
 };
 
-export { getHomeContent, updateHomeContent };
+export { getHomeContent, updateHomeContent }; 

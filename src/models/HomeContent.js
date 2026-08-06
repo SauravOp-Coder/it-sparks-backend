@@ -1,13 +1,44 @@
 import mongoose from "mongoose";
 
-const homeSectionSchema = new mongoose.Schema(
+const imageSchema = new mongoose.Schema(
   {
-    type: {
+    url: { type: String, default: "" },
+    publicId: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const buttonSchema = new mongoose.Schema(
+  {
+    text: { type: String, default: "" },
+    link: { type: String, default: "/" },
+    style: {
       type: String,
-      enum: ["heading", "paragraph", "bulletList", "numberedList", "highlight"],
+      enum: ["primary", "secondary", "link"],
+      default: "primary",
+    },
+    order: { type: Number, default: 0 },
+  },
+  { _id: true }
+);
+
+const sectionSchema = new mongoose.Schema(
+  {
+    sectionType: {
+      type: String,
+      enum: [
+        "heading",
+        "paragraph",
+        "bulletList",
+        "numberedList",
+        "highlight",
+        "imageBanner",
+      ],
       default: "paragraph",
     },
+    enabled: { type: Boolean, default: true },
     title: { type: String, default: "" },
+    subtitle: { type: String, default: "" },
     content: { type: String, default: "" },
     items: [{ type: String }],
     textCase: {
@@ -20,6 +51,8 @@ const homeSectionSchema = new mongoose.Schema(
       enum: ["full", "split"],
       default: "full",
     },
+    image: imageSchema,
+    buttons: [buttonSchema],
     order: { type: Number, default: 0 },
   },
   { _id: true }
@@ -29,113 +62,69 @@ const faqSchema = new mongoose.Schema(
   {
     question: { type: String, default: "" },
     answer: { type: String, default: "" },
+    enabled: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },
   { _id: true }
 );
 
-const homeContentSchema = new mongoose.Schema(
+const heroSchema = new mongoose.Schema(
   {
-    heroBadge: { type: String, default: "Practical IT Training Institute" },
-    heroHeading: {
+    badge: { type: String, default: "Practical IT Training Institute" },
+    heading: {
       type: String,
       default: "Build Your IT Career With Practical Training",
     },
-    heroSubheading: {
+    subheading: {
       type: String,
       default:
         "Learn job-ready skills through practical courses, real projects, expert mentorship, and career guidance.",
     },
-    primaryButtonText: { type: String, default: "Explore Courses" },
-    primaryButtonLink: { type: String, default: "/courses" },
-    secondaryButtonText: { type: String, default: "Book Free Demo" },
-    secondaryButtonLink: { type: String, default: "/contact" },
+    buttons: [buttonSchema],
+    image: imageSchema,
+  },
+  { _id: false }
+);
 
-    heroImage: {
-      url: { type: String, default: "" },
-      publicId: { type: String, default: "" },
-    },
-
-    popularCoursesTitle: {
+const sectionHeaderSchema = new mongoose.Schema(
+  {
+    title: {
       type: String,
       default: "Industry-focused courses to build your career",
     },
-    popularCoursesSubtitle: {
+    subtitle: {
       type: String,
       default:
-        "Choose from practical IT courses designed with real-world projects, interview preparation, and career support.",
+        "Choose from practical IT courses designed with real-world projects, interview preparation, and placement support.",
     },
+  },
+  { _id: false }
+);
 
-    whyChooseTitle: {
+const ctaSchema = new mongoose.Schema(
+  {
+    enabled: { type: Boolean, default: true },
+    title: {
       type: String,
-      default: "Why students choose IT Sparks Technologies",
+      default: "Start your IT learning journey today",
     },
-    whyChooseSubtitle: {
-      type: String,
-      default:
-        "We focus on practical learning, real-world projects, career guidance, and continuous support for students.",
-    },
-    whyChooseCards: [
-      {
-        title: { type: String, default: "" },
-        text: { type: String, default: "" },
-      },
-    ],
-
-    trainingTitle: {
-      type: String,
-      default: "Our practical training process",
-    },
-    trainingSubtitle: {
-      type: String,
-      default:
-        "Our process is designed to help students learn step by step and become confident with real project work.",
-    },
-    trainingSteps: [
-      {
-        number: { type: String, default: "" },
-        title: { type: String, default: "" },
-        text: { type: String, default: "" },
-      },
-    ],
-
-    placementTitle: {
-      type: String,
-      default: "Placement-focused training and career support",
-    },
-    placementSubtitle: {
-      type: String,
-      default:
-        "Our training approach focuses on skills, project practice, resume preparation, interview confidence, and career guidance.",
-    },
-    placementSupportCards: [
-      {
-        title: { type: String, default: "" },
-        text: { type: String, default: "" },
-      },
-    ],
-
-    recruiterTitle: {
-      type: String,
-      default: "Companies our students prepare for",
-    },
-    recruiterSubtitle: {
-      type: String,
-      default:
-        "We help students build skills required for interviews, internships, and job opportunities in IT companies.",
-    },
-    recruiters: [{ type: String }],
-
-    ctaTitle: { type: String, default: "Start your IT learning journey today" },
-    ctaSubtitle: {
+    subtitle: {
       type: String,
       default: "Book a free demo and get course guidance from our team.",
     },
-    ctaButtonText: { type: String, default: "Book Free Demo" },
-    ctaButtonLink: { type: String, default: "/contact" },
+    buttonText: { type: String, default: "Book Free Demo" },
+    buttonLink: { type: String, default: "/contact" },
+  },
+  { _id: false }
+);
 
-    homeSections: [homeSectionSchema],
+const homeContentSchema = new mongoose.Schema(
+  {
+    hero: heroSchema,
+    popularCourses: sectionHeaderSchema,
+    sections: [sectionSchema],
     faqs: [faqSchema],
+    cta: ctaSchema,
   },
   { timestamps: true }
 );
