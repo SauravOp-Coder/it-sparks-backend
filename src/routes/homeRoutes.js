@@ -4,11 +4,13 @@ import {
   updateHomeContent,
 } from "../controllers/homeController.js";
 import { protectAdmin } from "../middleware/authMiddleware.js";
-import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
+// GET /api/home - Fetch home page data
 router.get("/", getHomeContent);
-router.put("/", protectAdmin, upload.single("heroImage"), updateHomeContent);
+
+// PUT /api/home - Save/update home page content (JSON payload)
+router.put("/", protectAdmin, updateHomeContent);
 
 export default router;
