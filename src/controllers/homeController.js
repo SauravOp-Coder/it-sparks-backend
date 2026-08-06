@@ -1,6 +1,6 @@
+// controllers/homeController.js
 import HomeContent from "../models/HomeContent.js";
 
-// Helper utilities to parse pipe-delimited text strings
 const parseCardsText = (text) => {
   if (!text || typeof text !== "string") return [];
   return text
@@ -40,7 +40,6 @@ const parseRecruitersText = (text) => {
     .filter((item) => item.length > 0);
 };
 
-// Helper to safely parse JSON strings (useful when FormData is used for uploads)
 const safeJsonParse = (data) => {
   if (!data) return null;
   if (typeof data === "object") return data;
@@ -51,27 +50,21 @@ const safeJsonParse = (data) => {
   }
 };
 
-const getHomeContent = async (req, res) => {
+export const getHomeContent = async (req, res) => {
   try {
     let homeContent = await HomeContent.findOne();
-
     if (!homeContent) {
       homeContent = await HomeContent.create({});
     }
-
-    res.status(200).json({
-      success: true,
-      homeContent,
-    });
+    res.status(200).json({ success: true, homeContent });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const updateHomeContent = async (req, res) => {
+export const updateHomeContent = async (req, res) => {
   try {
     let homeContent = await HomeContent.findOne();
-
     if (!homeContent) {
       homeContent = await HomeContent.create({});
     }
@@ -102,18 +95,18 @@ const updateHomeContent = async (req, res) => {
       "faqSubtitle",
     ];
 
-    // 1. Update basic text fields
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {
         homeContent[field] = req.body[field];
       }
     });
 
-    // 2. Parse and update dynamic Sections & FAQs array
+    // Parse array objects passed via FormData
     if (req.body.sections !== undefined) {
       const parsedSections = safeJsonParse(req.body.sections);
       if (Array.isArray(parsedSections)) {
         homeContent.sections = parsedSections;
+        homeContent.markModified("sections");
       }
     }
 
@@ -121,50 +114,36 @@ const updateHomeContent = async (req, res) => {
       const parsedFaqs = safeJsonParse(req.body.faqs);
       if (Array.isArray(parsedFaqs)) {
         homeContent.faqs = parsedFaqs;
+        homeContent.markModified("faqs");
       }
     }
 
-    // 3. Parse and update complex text fields
     if (req.body.whyChooseCardsText !== undefined) {
       homeContent.whyChooseCards = parseCardsText(req.body.whyChooseCardsText);
+      homeContent.markModified("whyChooseCards");
     }
 
     if (req.body.trainingStepsText !== undefined) {
       homeContent.trainingSteps = parseTrainingText(req.body.trainingStepsText);
+      homeContent.markModified("trainingSteps");
     }
 
     if (req.body.placementSupportCardsText !== undefined) {
-      homeContent.placementSupportCards = parseCardsText(
-        req.body.placementSupportCardsText
-      );
+      homeContent.placementSupportCards = parseCardsText(req.body.placementSupportCardsText);
+      homeContent.markModified("placementSupportCards");
     }
 
     if (req.body.recruitersText !== undefined) {
       homeContent.recruiters = parseRecruitersText(req.body.recruitersText);
+      homeContent.markModified("recruiters");
     }
 
-    // Direct object updates if sent as JSON arrays directly
-    if (req.body.whyChooseCards && Array.isArray(safeJsonParse(req.body.whyChooseCards))) {
-      homeContent.whyChooseCards = safeJsonParse(req.body.whyChooseCards);
-    }
-    if (req.body.trainingSteps && Array.isArray(safeJsonParse(req.body.trainingSteps))) {
-      homeContent.trainingSteps = safeJsonParse(req.body.trainingSteps);
-    }
-    if (req.body.placementSupportCards && Array.isArray(safeJsonParse(req.body.placementSupportCards))) {
-      homeContent.placementSupportCards = safeJsonParse(req.body.placementSupportCards);
-    }
-
-    // 4. Handle image upload if present
     if (req.file) {
       homeContent.heroImage = {
         url: req.file.path,
         publicId: req.file.filename,
       };
     }
-
-    // Force Mongoose to mark sections and faqs as modified (ensures save detects array changes)
-    homeContent.markModified("sections");
-    homeContent.markModified("faqs");
 
     const updatedHomeContent = await homeContent.save();
 
@@ -177,5 +156,3 @@ const updateHomeContent = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-export { getHomeContent, updateHomeContent };
