@@ -59,7 +59,7 @@ const parseHomeSections = (value) => {
   if (!value) return [];
 
   try {
-    const parsed = JSON.parse(value);
+    const parsed = Array.isArray(value) ? value : JSON.parse(value);
 
     if (!Array.isArray(parsed)) return [];
 
@@ -100,7 +100,7 @@ const parseFaqs = (value) => {
   if (!value) return [];
 
   try {
-    const parsed = JSON.parse(value);
+    const parsed = Array.isArray(value) ? value : JSON.parse(value);
 
     if (!Array.isArray(parsed)) return [];
 
