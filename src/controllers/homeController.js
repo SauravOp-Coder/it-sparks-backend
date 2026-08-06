@@ -1,52 +1,181 @@
-const HomeContent = require("../models/HomeContent");
+import HomeContent from "../models/HomeContent.js";
 
-// Get Home Content
-exports.getHomeContent = async (req, res) => {
+// Helper utilities to parse pipe-delimited text strings
+const parseCardsText = (text) => {
+  if (!text || typeof text !== "string") return [];
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [title, ...textParts] = line.split("|");
+      return {
+        title: title ? title.trim() : "",
+        text: textParts.length ? textParts.join("|").trim() : "",
+      };
+    });
+};
+
+const parseTrainingText = (text) => {
+  if (!text || typeof text !== "string") return [];
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [number, title, ...textParts] = line.split("|");
+      return {
+        number: number ? number.trim() : "",
+        title: title ? title.trim() : "",
+        text: textParts.length ? textParts.join("|").trim() : "",
+      };
+    });
+};
+
+const parseRecruitersText = (text) => {
+  if (!text || typeof text !== "string") return [];
+  return text
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+};
+
+// Helper to safely parse JSON strings (useful when FormData is used for uploads)
+const safeJsonParse = (data) => {
+  if (!data) return null;
+  if (typeof data === "object") return data;
   try {
-    let content = await HomeContent.findOne();
-    if (!content) {
-      content = await HomeContent.create({});
+    return JSON.parse(data);
+  } catch (err) {
+    return null;
+  }
+};
+
+const getHomeContent = async (req, res) => {
+  try {
+    let homeContent = await HomeContent.findOne();
+
+    if (!homeContent) {
+      homeContent = await HomeContent.create({});
     }
-    res.status(200).json({ success: true, data: content });
+
+    res.status(200).json({
+      success: true,
+      homeContent,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Update Home Content
-exports.updateHomeContent = async (req, res) => {
+const updateHomeContent = async (req, res) => {
   try {
-    const payload = req.body;
+    let homeContent = await HomeContent.findOne();
 
-    // Parse JSON strings if payload comes via FormData
-    const parsedData = {
-      hero: typeof payload.hero === "string" ? JSON.parse(payload.hero) : payload.hero,
-      titles: typeof payload.titles === "string" ? JSON.parse(payload.titles) : payload.titles,
-      whyChooseCards: typeof payload.whyChooseCards === "string" ? JSON.parse(payload.whyChooseCards) : payload.whyChooseCards,
-      trainingSteps: typeof payload.trainingSteps === "string" ? JSON.parse(payload.trainingSteps) : payload.trainingSteps,
-      placementSupportCards: typeof payload.placementSupportCards === "string" ? JSON.parse(payload.placementSupportCards) : payload.placementSupportCards,
-      recruiters: typeof payload.recruiters === "string" ? JSON.parse(payload.recruiters) : payload.recruiters,
-      customSections: typeof payload.customSections === "string" ? JSON.parse(payload.customSections) : payload.customSections,
-      faqs: typeof payload.faqs === "string" ? JSON.parse(payload.faqs) : payload.faqs,
-      cta: typeof payload.cta === "string" ? JSON.parse(payload.cta) : payload.cta,
-    };
+    if (!homeContent) {
+      homeContent = await HomeContent.create({});
+    }
 
-    // If image file uploaded (Multer/Cloudinary)
+    const fields = [
+      "heroBadge",
+      "heroHeading",
+      "heroSubheading",
+      "primaryButtonText",
+      "primaryButtonLink",
+      "secondaryButtonText",
+      "secondaryButtonLink",
+      "popularCoursesTitle",
+      "popularCoursesSubtitle",
+      "whyChooseTitle",
+      "whyChooseSubtitle",
+      "trainingTitle",
+      "trainingSubtitle",
+      "placementTitle",
+      "placementSubtitle",
+      "recruiterTitle",
+      "recruiterSubtitle",
+      "ctaTitle",
+      "ctaSubtitle",
+      "ctaButtonText",
+      "ctaButtonLink",
+      "faqTitle",
+      "faqSubtitle",
+    ];
+
+    // 1. Update basic text fields
+    fields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        homeContent[field] = req.body[field];
+      }
+    });
+
+    // 2. Parse and update dynamic Sections & FAQs array
+    if (req.body.sections !== undefined) {
+      const parsedSections = safeJsonParse(req.body.sections);
+      if (Array.isArray(parsedSections)) {
+        homeContent.sections = parsedSections;
+      }
+    }
+
+    if (req.body.faqs !== undefined) {
+      const parsedFaqs = safeJsonParse(req.body.faqs);
+      if (Array.isArray(parsedFaqs)) {
+        homeContent.faqs = parsedFaqs;
+      }
+    }
+
+    // 3. Parse and update complex text fields
+    if (req.body.whyChooseCardsText !== undefined) {
+      homeContent.whyChooseCards = parseCardsText(req.body.whyChooseCardsText);
+    }
+
+    if (req.body.trainingStepsText !== undefined) {
+      homeContent.trainingSteps = parseTrainingText(req.body.trainingStepsText);
+    }
+
+    if (req.body.placementSupportCardsText !== undefined) {
+      homeContent.placementSupportCards = parseCardsText(
+        req.body.placementSupportCardsText
+      );
+    }
+
+    if (req.body.recruitersText !== undefined) {
+      homeContent.recruiters = parseRecruitersText(req.body.recruitersText);
+    }
+
+    // Direct object updates if sent as JSON arrays directly
+    if (req.body.whyChooseCards && Array.isArray(safeJsonParse(req.body.whyChooseCards))) {
+      homeContent.whyChooseCards = safeJsonParse(req.body.whyChooseCards);
+    }
+    if (req.body.trainingSteps && Array.isArray(safeJsonParse(req.body.trainingSteps))) {
+      homeContent.trainingSteps = safeJsonParse(req.body.trainingSteps);
+    }
+    if (req.body.placementSupportCards && Array.isArray(safeJsonParse(req.body.placementSupportCards))) {
+      homeContent.placementSupportCards = safeJsonParse(req.body.placementSupportCards);
+    }
+
+    // 4. Handle image upload if present
     if (req.file) {
-      parsedData.hero = {
-        ...parsedData.hero,
-        imageUrl: req.file.path || req.file.secure_url,
+      homeContent.heroImage = {
+        url: req.file.path,
+        publicId: req.file.filename,
       };
     }
 
-    const updatedContent = await HomeContent.findOneAndUpdate({}, parsedData, {
-      new: true,
-      upsert: true,
-      runValidators: true,
-    });
+    // Force Mongoose to mark sections and faqs as modified (ensures save detects array changes)
+    homeContent.markModified("sections");
+    homeContent.markModified("faqs");
 
-    res.status(200).json({ success: true, data: updatedContent });
+    const updatedHomeContent = await homeContent.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Home content updated successfully",
+      homeContent: updatedHomeContent,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export { getHomeContent, updateHomeContent };

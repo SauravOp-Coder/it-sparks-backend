@@ -1,9 +1,14 @@
-const express = require("express");
+import express from "express";
+import {
+  getHomeContent,
+  updateHomeContent,
+} from "../controllers/homeController.js";
+import { protectAdmin } from "../middleware/authMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js";
+
 const router = express.Router();
-const { getHomeContent, updateHomeContent } = require("../controllers/homeController");
-// const upload = require("../middleware/upload"); // Multer instance
 
 router.get("/", getHomeContent);
-router.put("/", updateHomeContent); // add upload.single("heroImage") here if handling uploads
+router.put("/", protectAdmin, upload.single("heroImage"), updateHomeContent);
 
-module.exports = router;
+export default router;
