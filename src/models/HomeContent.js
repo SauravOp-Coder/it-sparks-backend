@@ -1,134 +1,171 @@
-import mongoose from "mongoose";
+import HomeContent from "../models/HomeContent.js";
 
-const imageSchema = new mongoose.Schema(
-  {
-    url: { type: String, default: "" },
-    publicId: { type: String, default: "" },
-  },
-  { _id: false }
-);
+const ensureHomeContent = async () => {
+  let homeContent = await HomeContent.findOne();
 
-const buttonSchema = new mongoose.Schema(
-  {
-    text: { type: String, default: "" },
-    link: { type: String, default: "/" },
-    style: {
-      type: String,
-      enum: ["primary", "secondary", "link"],
-      default: "primary",
-    },
-    order: { type: Number, default: 0 },
-  },
-  { _id: true }
-);
+  if (!homeContent) {
+    homeContent = await HomeContent.create({
+      hero: {
+        badge: "Practical IT Training Institute",
+        heading: "Build Your IT Career With Practical Training",
+        subheading: "Learn job-ready skills through practical courses, real projects, expert mentorship, and career guidance.",
+        buttons: [
+          { text: "Explore Courses", link: "/courses", style: "primary", order: 0 },
+          { text: "Book Free Demo", link: "/contact", style: "secondary", order: 1 },
+        ],
+      },
+      popularCourses: {
+        title: "Industry-focused courses to build your career",
+        subtitle: "Choose from practical IT courses designed with real-world projects, interview preparation, and placement support.",
+      },
+      sections: [],
+      faqs: [],
+      cta: {
+        enabled: true,
+        title: "Start your IT learning journey today",
+        subtitle: "Book a free demo and get course guidance from our team.",
+        buttonText: "Book Free Demo",
+        buttonLink: "/contact",
+      },
+    });
+  }
 
-const sectionSchema = new mongoose.Schema(
-  {
-    sectionType: {
-      type: String,
-      enum: [
-        "heading",
-        "paragraph",
-        "bulletList",
-        "numberedList",
-        "highlight",
-        "imageBanner",
+  return homeContent;
+};
+
+const parseSections = (value) => {
+  if (!value) return [];
+
+  try {
+    const rawSections = typeof value === "string" ? JSON.parse(value) : value;
+    if (!Array.isArray(rawSections)) return [];
+
+    return rawSections
+      .map((sec, index) => ({
+        sectionType: sec.sectionType || sec.type || "paragraph",
+        enabled: sec.enabled !== false,
+        title: sec.title || "",
+        subtitle: sec.subtitle || "",
+        content: sec.content || "",
+        items: Array.isArray(sec.items)
+          ? sec.items.filter((item) => typeof item === "string" && item.trim())
+          : [],
+        textCase: sec.textCase || "normal",
+        layout: sec.layout || "full",
+        buttons: Array.isArray(sec.buttons) ? sec.buttons : [],
+        order: typeof sec.order === "number" ? sec.order : index,
+      }))
+      .filter((sec) => sec.title || sec.content || sec.items.length);
+  } catch (error) {
+    console.error("Error parsing sections:", error);
+    return [];
+  }
+};
+
+const parseFaqs = (value) => {
+  if (!value) return [];
+
+  try {
+    const rawFaqs = typeof value === "string" ? JSON.parse(value) : value;
+    if (!Array.isArray(rawFaqs)) return [];
+
+    return rawFaqs
+      .map((faq, index) => ({
+        question: faq.question || "",
+        answer: faq.answer || "",
+        enabled: faq.enabled !== false,
+        order: typeof faq.order === "number" ? faq.order : index,
+      }))
+      .filter((faq) => faq.question || faq.answer);
+  } catch (error) {
+    console.error("Error parsing FAQs:", error);
+    return [];
+  }
+};
+
+const getHomeContent = async (req, res) => {
+  try {
+    const homeContent = await ensureHomeContent();
+    res.status(200).json({
+      success: true,
+      homeContent,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateHomeContent = async (req, res) => {
+  try {
+    const homeContent = await ensureHomeContent();
+    const payload = req.body || {};
+
+    // 1. Update Hero Object
+    homeContent.hero = {
+      ...homeContent.hero?.toObject(),
+      badge: payload.heroBadge ?? homeContent.hero?.badge,
+      heading: payload.heroHeading ?? homeContent.hero?.heading,
+      subheading: payload.heroSubheading ?? homeContent.hero?.subheading,
+      buttons: [
+        {
+          text: payload.primaryButtonText ?? homeContent.hero?.buttons?.[0]?.text ?? "",
+          link: payload.primaryButtonLink ?? homeContent.hero?.buttons?.[0]?.link ?? "/",
+          style: "primary",
+          order: 0,
+        },
+        {
+          text: payload.secondaryButtonText ?? homeContent.hero?.buttons?.[1]?.text ?? "",
+          link: payload.secondaryButtonLink ?? homeContent.hero?.buttons?.[1]?.link ?? "/",
+          style: "secondary",
+          order: 1,
+        },
       ],
-      default: "paragraph",
-    },
-    enabled: { type: Boolean, default: true },
-    title: { type: String, default: "" },
-    subtitle: { type: String, default: "" },
-    content: { type: String, default: "" },
-    items: [{ type: String }],
-    textCase: {
-      type: String,
-      enum: ["normal", "uppercase", "lowercase", "capitalize"],
-      default: "normal",
-    },
-    layout: {
-      type: String,
-      enum: ["full", "split"],
-      default: "full",
-    },
-    image: imageSchema,
-    buttons: [buttonSchema],
-    order: { type: Number, default: 0 },
-  },
-  { _id: true }
-);
+    };
 
-const faqSchema = new mongoose.Schema(
-  {
-    question: { type: String, default: "" },
-    answer: { type: String, default: "" },
-    enabled: { type: Boolean, default: true },
-    order: { type: Number, default: 0 },
-  },
-  { _id: true }
-);
+    // If hero image uploaded via Multer
+    if (req.file) {
+      homeContent.hero.image = {
+        url: req.file.path,
+        publicId: req.file.filename,
+      };
+    }
 
-const heroSchema = new mongoose.Schema(
-  {
-    badge: { type: String, default: "Practical IT Training Institute" },
-    heading: {
-      type: String,
-      default: "Build Your IT Career With Practical Training",
-    },
-    subheading: {
-      type: String,
-      default:
-        "Learn job-ready skills through practical courses, real projects, expert mentorship, and career guidance.",
-    },
-    buttons: [buttonSchema],
-    image: imageSchema,
-  },
-  { _id: false }
-);
+    // 2. Update Popular Courses Section Header
+    homeContent.popularCourses = {
+      title: payload.popularCoursesTitle ?? homeContent.popularCourses?.title,
+      subtitle: payload.popularCoursesSubtitle ?? homeContent.popularCourses?.subtitle,
+    };
 
-const sectionHeaderSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      default: "Industry-focused courses to build your career",
-    },
-    subtitle: {
-      type: String,
-      default:
-        "Choose from practical IT courses designed with real-world projects, interview preparation, and placement support.",
-    },
-  },
-  { _id: false }
-);
+    // 3. Update CTA Section Object
+    homeContent.cta = {
+      enabled: true,
+      title: payload.ctaTitle ?? homeContent.cta?.title,
+      subtitle: payload.ctaSubtitle ?? homeContent.cta?.subtitle,
+      buttonText: payload.ctaButtonText ?? homeContent.cta?.buttonText,
+      buttonLink: payload.ctaButtonLink ?? homeContent.cta?.buttonLink,
+    };
 
-const ctaSchema = new mongoose.Schema(
-  {
-    enabled: { type: Boolean, default: true },
-    title: {
-      type: String,
-      default: "Start your IT learning journey today",
-    },
-    subtitle: {
-      type: String,
-      default: "Book a free demo and get course guidance from our team.",
-    },
-    buttonText: { type: String, default: "Book Free Demo" },
-    buttonLink: { type: String, default: "/contact" },
-  },
-  { _id: false }
-);
+    // 4. Update Arrays (Sections & FAQs)
+    const incomingSections = payload.homeSections || payload.sections;
+    if (incomingSections !== undefined) {
+      homeContent.sections = parseSections(incomingSections);
+    }
 
-const homeContentSchema = new mongoose.Schema(
-  {
-    hero: heroSchema,
-    popularCourses: sectionHeaderSchema,
-    sections: [sectionSchema],
-    faqs: [faqSchema],
-    cta: ctaSchema,
-  },
-  { timestamps: true }
-);
+    if (payload.faqs !== undefined) {
+      homeContent.faqs = parseFaqs(payload.faqs);
+    }
 
-const HomeContent = mongoose.model("HomeContent", homeContentSchema);
+    await homeContent.save();
 
-export default HomeContent;
+    res.status(200).json({
+      success: true,
+      message: "Home content updated successfully",
+      homeContent,
+    });
+  } catch (error) {
+    console.error("Update Home Content Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export { getHomeContent, updateHomeContent };
