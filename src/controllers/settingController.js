@@ -28,6 +28,12 @@ const updateSettings = async (req, res) => {
     googleMapLink,
     googleReviewReadLink,
     googleReviewWriteLink,
+    seoTitle,
+    seoDescription,
+    seoKeywords,
+    seoImage,
+    seoCanonicalBase,
+    siteName,
     socialLinks,
   } = req.body;
 
@@ -40,6 +46,12 @@ const updateSettings = async (req, res) => {
     googleReviewReadLink ?? settings.googleReviewReadLink;
   settings.googleReviewWriteLink =
     googleReviewWriteLink ?? settings.googleReviewWriteLink;
+  settings.seoTitle = seoTitle ?? settings.seoTitle;
+  settings.seoDescription = seoDescription ?? settings.seoDescription;
+  settings.seoKeywords = seoKeywords ?? settings.seoKeywords;
+  settings.seoImage = seoImage ?? settings.seoImage;
+  settings.seoCanonicalBase = seoCanonicalBase ?? settings.seoCanonicalBase;
+  settings.siteName = siteName ?? settings.siteName;
 
   if (socialLinks) {
     settings.socialLinks = {
