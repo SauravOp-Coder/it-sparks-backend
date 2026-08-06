@@ -99,21 +99,67 @@ const parseHomeSections = (value) => {
 const parseFaqs = (value) => {
   if (!value) return [];
 
-  try {
-    const parsed = Array.isArray(value) ? value : JSON.parse(value);
-
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .map((faq, index) => ({
-        question: faq.question || "",
-        answer: faq.answer || "",
-        order: index,
-      }))
-      .filter((faq) => faq.question || faq.answer);
-  } catch (error) {
+  const parseArrayLike = (input) => {
+    if (Array.isArray(input)) return input;
+    if (input && typeof input === "object") return Object.values(input);
     return [];
+  };
+
+  const parseFaqItem = (item) => {
+    if (!item) return { question: "", answer: "" };
+
+    if (typeof item === "string") {
+      const [question, ...answerParts] = item.split("|");
+      return {
+        question: question ? question.trim() : "",
+        answer: answerParts.length ? answerParts.join("|").trim() : "",
+      };
+    }
+
+    if (Array.isArray(item)) {
+      return {
+        question: item[0] ? String(item[0]).trim() : "",
+        answer: item[1] ? String(item[1]).trim() : "",
+      };
+    }
+
+    return {
+      question: item?.question ? String(item.question).trim() : "",
+      answer: item?.answer ? String(item.answer).trim() : "",
+    };
+  };
+
+  const parseAsText = (text) => {
+    return text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map(parseFaqItem);
+  };
+
+  let parsed = value;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "null" || trimmed === "undefined") {
+      return [];
+    }
+
+    try {
+      parsed = JSON.parse(value);
+    } catch (error) {
+      parsed = parseAsText(value);
+    }
   }
+
+  parsed = parseArrayLike(parsed);
+
+  return parsed
+    .map((faq, index) => ({
+      ...parseFaqItem(faq),
+      order: index,
+    }))
+    .filter((faq) => faq.question || faq.answer);
 };
 
 const getHomeContent = async (req, res) => {
