@@ -21,15 +21,29 @@ import {
 
 const app = express();
 
+const normalizeOrigin = (value) =>
+  typeof value === "string" ? value.replace(/\/$/, "") : value;
+
+const backendUrl = normalizeOrigin(
+  process.env.BACKEND_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    "https://it-sparks-backend.onrender.com"
+);
+
+const frontendUrl = normalizeOrigin(
+  process.env.FRONTEND_URL ||
+    process.env.CLIENT_URL ||
+    "https://it-sparks-frontend.vercel.app"
+);
+
 /**
  * Allowed Origins
  */
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://it-sparks-frontend.vercel.app",
-  process.env.FRONTEND_URL,
-  process.env.CLIENT_URL,
+  frontendUrl,
+  backendUrl,
 ].filter(Boolean);
 
 app.use(
