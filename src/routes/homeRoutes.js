@@ -7,10 +7,20 @@ import { protectAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET /api/home - Fetch home page data
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+
 router.get("/", getHomeContent);
 
-// PUT /api/home - Save/update home page content (JSON payload)
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
+
 router.put("/", protectAdmin, updateHomeContent);
 
 export default router;
