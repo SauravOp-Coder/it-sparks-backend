@@ -40,7 +40,7 @@ const startServer = async () => {
       });
     });
 
-    // Handle graceful shutdown signals from Render / Cloud hosts
+
     process.on("SIGTERM", () => {
       console.log("👋 SIGTERM RECEIVED. Shutting down gracefully...");
       server.close(() => {
