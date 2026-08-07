@@ -41,6 +41,12 @@ const courseSchema = new mongoose.Schema(
       trim: true,
     },
 
+    dropdownName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     slug: {
       type: String,
       unique: true,

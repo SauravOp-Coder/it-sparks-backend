@@ -83,6 +83,16 @@ const getUploadedFile = (req, fieldName) => {
   return req.files?.[fieldName]?.[0] || null;
 };
 
+const serializeCourse = (course) => {
+  const plainCourse =
+    typeof course?.toObject === "function" ? course.toObject() : course;
+
+  return {
+    ...plainCourse,
+    dropdownName: plainCourse.dropdownName || plainCourse.title || "",
+  };
+};
+
 const getCourses = async (req, res) => {
   const courses = await Course.find({ isVisible: true }).sort({
     createdAt: -1,
@@ -91,7 +101,7 @@ const getCourses = async (req, res) => {
   res.status(200).json({
     success: true,
     count: courses.length,
-    courses,
+    courses: courses.map(serializeCourse),
   });
 };
 
@@ -103,7 +113,7 @@ const getAdminCourses = async (req, res) => {
   res.status(200).json({
     success: true,
     count: courses.length,
-    courses,
+    courses: courses.map(serializeCourse),
   });
 };
 
@@ -123,13 +133,14 @@ const getCourseById = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    course,
+    course: serializeCourse(course),
   });
 };
 
 const createCourse = async (req, res) => {
   const {
     title,
+    dropdownName,
     category,
     description,
     duration,
@@ -152,6 +163,7 @@ const createCourse = async (req, res) => {
 
   const course = await Course.create({
     title,
+    dropdownName: dropdownName || title,
     slug: createSlug(title),
     category,
     description,
@@ -180,7 +192,7 @@ const createCourse = async (req, res) => {
   res.status(201).json({
     success: true,
     message: "Course created successfully",
-    course,
+    course: serializeCourse(course),
   });
 };
 
@@ -194,6 +206,7 @@ const updateCourse = async (req, res) => {
 
   const {
     title,
+    dropdownName,
     category,
     description,
     duration,
@@ -208,6 +221,10 @@ const updateCourse = async (req, res) => {
   if (title !== undefined) {
     course.title = title;
     course.slug = createSlug(title);
+  }
+
+  if (dropdownName !== undefined) {
+    course.dropdownName = dropdownName;
   }
 
   if (category !== undefined) course.category = category;
@@ -265,7 +282,7 @@ const updateCourse = async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Course updated successfully",
-    course: updatedCourse,
+    course: serializeCourse(updatedCourse),
   });
 };
 
