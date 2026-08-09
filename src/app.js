@@ -42,6 +42,7 @@ const frontendUrl = normalizeOrigin(
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://www.itsparkstech.com",
   frontendUrl,
   backendUrl,
 ].filter(Boolean);
