@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Blog from "../models/Blog.js";
 import createSlug from "../utils/createSlug.js";
 import { cloudinary } from "../config/cloudinary.js";
@@ -28,7 +29,13 @@ const getAdminBlogs = async (req, res) => {
 };
 
 const getSingleBlog = async (req, res) => {
-  const blog = await Blog.findById(req.params.id);
+  const identifier = req.params.id;
+
+  const query = mongoose.Types.ObjectId.isValid(identifier)
+    ? { _id: identifier, isVisible: true }
+    : { slug: identifier, isVisible: true };
+
+  const blog = await Blog.findOne(query);
 
   if (!blog) {
     res.status(404);
@@ -49,6 +56,9 @@ const createBlog = async (req, res) => {
     content,
     publishedDate,
     isVisible,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
   } = req.body;
 
   if (!title || !category || !shortDescription || !content) {
@@ -84,6 +94,9 @@ const createBlog = async (req, res) => {
     publishedDate: publishedDate || Date.now(),
     isVisible:
       isVisible === undefined ? true : isVisible === "true" || isVisible === true,
+    metaTitle: metaTitle || "",
+    metaDescription: metaDescription || "",
+    metaKeywords: metaKeywords || "",
   });
 
   res.status(201).json({
@@ -108,6 +121,9 @@ const updateBlog = async (req, res) => {
     content,
     publishedDate,
     isVisible,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
   } = req.body;
 
   if (title && title !== blog.title) {
@@ -119,6 +135,10 @@ const updateBlog = async (req, res) => {
   blog.shortDescription = shortDescription ?? blog.shortDescription;
   blog.content = content ?? blog.content;
   blog.publishedDate = publishedDate ?? blog.publishedDate;
+
+  if (metaTitle !== undefined) blog.metaTitle = metaTitle;
+  if (metaDescription !== undefined) blog.metaDescription = metaDescription;
+  if (metaKeywords !== undefined) blog.metaKeywords = metaKeywords;
 
   if (req.file) {
     if (blog.image?.publicId) {

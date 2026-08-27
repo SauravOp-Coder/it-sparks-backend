@@ -151,6 +151,9 @@ const createCourse = async (req, res) => {
     isVisible,
     syllabus,
     detailSections,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
   } = req.body;
 
   if (!title) {
@@ -187,6 +190,9 @@ const createCourse = async (req, res) => {
       : undefined,
     isPopular: parseBoolean(isPopular, false),
     isVisible: parseBoolean(isVisible, true),
+    metaTitle: metaTitle || "",
+    metaDescription: metaDescription || "",
+    metaKeywords: metaKeywords || "",
   });
 
   res.status(201).json({
@@ -216,6 +222,9 @@ const updateCourse = async (req, res) => {
     isVisible,
     syllabus,
     detailSections,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
   } = req.body;
 
   if (title !== undefined) {
@@ -232,6 +241,10 @@ const updateCourse = async (req, res) => {
   if (duration !== undefined) course.duration = duration;
   if (mode !== undefined) course.mode = mode;
   if (level !== undefined) course.level = level;
+
+  if (metaTitle !== undefined) course.metaTitle = metaTitle;
+  if (metaDescription !== undefined) course.metaDescription = metaDescription;
+  if (metaKeywords !== undefined) course.metaKeywords = metaKeywords;
 
   if (syllabus !== undefined) {
     course.syllabus = parseSyllabus(syllabus);

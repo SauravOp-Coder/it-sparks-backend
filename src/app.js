@@ -13,6 +13,7 @@ import homeRoutes from "./routes/homeRoutes.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
+import sitemapRoutes from "./routes/sitemapRoutes.js";
 
 import {
   notFound,
@@ -79,6 +80,7 @@ app.get("/", (req, res) => {
   res.send("IT Sparks Technologies Backend Server Running");
 });
 
+app.use("/", sitemapRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
