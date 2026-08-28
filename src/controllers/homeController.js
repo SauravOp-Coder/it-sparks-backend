@@ -21,6 +21,8 @@ const getOrCreateHomeContent = async () => {
 
       faqs: [],
 
+      courseFaqs: [],
+
       ctaTitle: "Start Your IT Career Today",
 
       ctaSubtitle:
@@ -137,6 +139,10 @@ export const updateHomeContent = async (req, res) => {
 
     home.faqs = parseFaqs(
       body.faqs
+    );
+
+    home.courseFaqs = parseFaqs(
+      body.courseFaqs
     );
 
     home.ctaTitle =

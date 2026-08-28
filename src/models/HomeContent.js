@@ -94,8 +94,14 @@ const homeContentSchema = new mongoose.Schema(
       default: [],
     },
 
-    // FAQs
+    // FAQs (Homepage)
     faqs: {
+      type: [faqSchema],
+      default: [],
+    },
+
+    // FAQs (Courses Page)
+    courseFaqs: {
       type: [faqSchema],
       default: [],
     },
