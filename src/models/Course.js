@@ -83,7 +83,17 @@ const courseSchema = new mongoose.Schema(
         type: String,
       },
     ],
-        metaTitle: {
+
+    detailSections: [detailSectionSchema],
+
+    faqs: [
+      {
+        question: { type: String, default: "" },
+        answer: { type: String, default: "" },
+      },
+    ],
+
+    metaTitle: {
       type: String,
       default: "",
       trim: true,
@@ -100,14 +110,6 @@ const courseSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
-    faqs: [
-      {
-        question: { type: String, default: "" },
-        answer: { type: String, default: "" },
-      },
-    ],
-
-    detailSections: [detailSectionSchema],
 
     image: {
       url: {
