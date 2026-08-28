@@ -39,6 +39,24 @@ const normalizeSectionType = (type) => {
   return "paragraph";
 };
 
+const parseFaqs = (value) => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((faq) => ({
+        question: faq.question || "",
+        answer: faq.answer || "",
+      }))
+      .filter((faq) => faq.question && faq.answer);
+  } catch (error) {
+    return [];
+  }
+};
+
 const parseDetailSections = (value) => {
   if (!value) return [];
 
@@ -154,6 +172,7 @@ const createCourse = async (req, res) => {
     metaTitle,
     metaDescription,
     metaKeywords,
+    faqs,
   } = req.body;
 
   if (!title) {
@@ -175,6 +194,10 @@ const createCourse = async (req, res) => {
     level,
     syllabus: parseSyllabus(syllabus),
     detailSections: parseDetailSections(detailSections),
+    metaTitle: metaTitle || "",
+    metaDescription: metaDescription || "",
+    metaKeywords: metaKeywords || "",
+    faqs: parseFaqs(faqs),
     image: imageFile
       ? {
           url: imageFile.path,
@@ -208,6 +231,10 @@ const updateCourse = async (req, res) => {
   if (!course) {
     res.status(404);
     throw new Error("Course not found");
+  }
+
+    if (faqs !== undefined) {
+    course.faqs = parseFaqs(faqs);
   }
 
   const {
