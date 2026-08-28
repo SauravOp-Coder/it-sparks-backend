@@ -100,6 +100,12 @@ const courseSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    faqs: [
+      {
+        question: { type: String, default: "" },
+        answer: { type: String, default: "" },
+      },
+    ],
 
     detailSections: [detailSectionSchema],
 
