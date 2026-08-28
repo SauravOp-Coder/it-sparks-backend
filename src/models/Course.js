@@ -83,6 +83,23 @@ const courseSchema = new mongoose.Schema(
         type: String,
       },
     ],
+        metaTitle: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    metaDescription: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    metaKeywords: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
     detailSections: [detailSectionSchema],
 
