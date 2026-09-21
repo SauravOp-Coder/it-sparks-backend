@@ -44,6 +44,10 @@ const getAdminBanners = async (req, res) => {
   });
 };
 
+const getUploadedFile = (req, fieldName) => {
+  return req.files?.[fieldName]?.[0] || null;
+};
+
 const createBanner = async (req, res) => {
   const {
     page,
@@ -61,7 +65,10 @@ const createBanner = async (req, res) => {
     throw new Error("Page is required");
   }
 
-  if (!req.file) {
+  const imageFile = getUploadedFile(req, "image");
+  const mobileImageFile = getUploadedFile(req, "mobileImage");
+
+  if (!imageFile) {
     res.status(400);
     throw new Error("Banner image is required");
   }
@@ -75,9 +82,15 @@ const createBanner = async (req, res) => {
     buttonLink,
     order: order || 0,
     image: {
-      url: req.file.path,
-      publicId: req.file.filename,
+      url: imageFile.path,
+      publicId: imageFile.filename,
     },
+    mobileImage: mobileImageFile
+      ? {
+          url: mobileImageFile.path,
+          publicId: mobileImageFile.filename,
+        }
+      : undefined,
     isVisible: isVisible === undefined ? true : isVisible === "true" || isVisible === true,
   });
 
@@ -119,14 +132,28 @@ const updateBanner = async (req, res) => {
     banner.isVisible = isVisible === "true" || isVisible === true;
   }
 
-  if (req.file) {
+  const imageFile = getUploadedFile(req, "image");
+  const mobileImageFile = getUploadedFile(req, "mobileImage");
+
+  if (imageFile) {
     if (banner.image?.publicId) {
       await cloudinary.uploader.destroy(banner.image.publicId);
     }
 
     banner.image = {
-      url: req.file.path,
-      publicId: req.file.filename,
+      url: imageFile.path,
+      publicId: imageFile.filename,
+    };
+  }
+
+  if (mobileImageFile) {
+    if (banner.mobileImage?.publicId) {
+      await cloudinary.uploader.destroy(banner.mobileImage.publicId);
+    }
+
+    banner.mobileImage = {
+      url: mobileImageFile.path,
+      publicId: mobileImageFile.filename,
     };
   }
 
@@ -149,6 +176,10 @@ const deleteBanner = async (req, res) => {
 
   if (banner.image?.publicId) {
     await cloudinary.uploader.destroy(banner.image.publicId);
+  }
+
+  if (banner.mobileImage?.publicId) {
+    await cloudinary.uploader.destroy(banner.mobileImage.publicId);
   }
 
   await banner.deleteOne();

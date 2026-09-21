@@ -54,6 +54,17 @@ const bannerSchema = new mongoose.Schema(
       },
     },
 
+        mobileImage: {
+      url: {
+        type: String,
+        default: "",
+      },
+      publicId: {
+        type: String,
+        default: "",
+      },
+    },
+
     order: {
       type: Number,
       default: 0,
