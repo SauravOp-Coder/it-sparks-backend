@@ -2,10 +2,11 @@ import mongoose from "mongoose";
 
 const homeSectionSchema = new mongoose.Schema(
   {
-    type: {
+     type: {
       type: String,
       enum: [
         "heading",
+        "subheading",
         "paragraph",
         "bulletList",
         "numberedList",
