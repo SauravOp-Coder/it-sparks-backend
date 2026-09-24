@@ -7,34 +7,48 @@ const enquirySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     mobile: {
       type: String,
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       default: "",
       trim: true,
     },
+
     interestedCourse: {
       type: String,
       default: "",
     },
+
     preferredMode: {
       type: String,
       enum: ["Online", "Offline", "Not Selected"],
       default: "Not Selected",
     },
+
     message: {
       type: String,
       default: "",
     },
+
     source: {
       type: String,
-      enum: ["Contact Form", "Course Enquiry", "Popup Form"],
+      enum: [
+        "Contact Form",
+        "Course Enquiry",
+        "Popup Form",
+        "Enquire Section",
+        "Free Demo",
+        "Brochure Download",
+      ],
       default: "Contact Form",
     },
+
     status: {
       type: String,
       enum: ["New", "Contacted", "Closed"],
