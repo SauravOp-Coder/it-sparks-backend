@@ -4,7 +4,7 @@ const detailSectionSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["heading", "paragraph", "bulletList", "numberedList", "highlight"],
+      enum: ["heading", "subheading", "paragraph", "bulletList", "numberedList", "highlight"],
       default: "paragraph",
     },
     title: {

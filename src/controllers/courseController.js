@@ -28,6 +28,7 @@ const normalizeSectionType = (type) => {
   const value = String(type || "").toLowerCase();
 
   if (value === "heading") return "heading";
+  if (value === "subheading") return "subheading";
   if (value === "paragraph") return "paragraph";
   if (value === "list") return "bulletList";
   if (value === "bulletlist") return "bulletList";
