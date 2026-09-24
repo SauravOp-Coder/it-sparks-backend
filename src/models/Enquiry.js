@@ -43,7 +43,7 @@ const enquirySchema = new mongoose.Schema(
         "Course Enquiry",
         "Popup Form",
         "Enquire Section",
-        "Free Demo",
+        "Free Demo Popup",
         "Brochure Download",
       ],
       default: "Contact Form",
