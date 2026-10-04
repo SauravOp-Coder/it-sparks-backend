@@ -16,6 +16,24 @@ const resolveUniqueSlug = async (desiredSlug, excludeId = null) => {
   return slug;
 };
 
+const parseFaqs = (value) => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((faq) => ({
+        question: faq.question || "",
+        answer: faq.answer || "",
+      }))
+      .filter((faq) => faq.question && faq.answer);
+  } catch (error) {
+    return [];
+  }
+};
+
 const getBlogs = async (req, res) => {
   const blogs = await Blog.find({ isVisible: true }).sort({
     publishedDate: -1,
@@ -73,6 +91,7 @@ const createBlog = async (req, res) => {
     metaTitle,
     metaDescription,
     metaKeywords,
+    faqs,
   } = req.body;
 
   if (!title || !category || !shortDescription || !content) {
@@ -107,6 +126,7 @@ const createBlog = async (req, res) => {
     metaTitle: metaTitle || "",
     metaDescription: metaDescription || "",
     metaKeywords: metaKeywords || "",
+    faqs: parseFaqs(faqs),
   });
 
   res.status(201).json({
@@ -135,13 +155,13 @@ const updateBlog = async (req, res) => {
     metaTitle,
     metaDescription,
     metaKeywords,
+    faqs,
   } = req.body;
 
   if (title && title !== blog.title) {
     blog.title = title;
   }
 
-  // Slug is now independently editable, same as courses
   if (slug !== undefined) {
     const desiredSlug = slug.trim() ? slug : title || blog.title;
 
@@ -158,6 +178,10 @@ const updateBlog = async (req, res) => {
   if (metaTitle !== undefined) blog.metaTitle = metaTitle;
   if (metaDescription !== undefined) blog.metaDescription = metaDescription;
   if (metaKeywords !== undefined) blog.metaKeywords = metaKeywords;
+
+  if (faqs !== undefined) {
+    blog.faqs = parseFaqs(faqs);
+  }
 
   if (req.file) {
     if (blog.image?.publicId) {

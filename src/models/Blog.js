@@ -44,6 +44,12 @@ const blogSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+        faqs: [
+      {
+        question: { type: String, default: "" },
+        answer: { type: String, default: "" },
+      },
+    ],
   },
   {
     timestamps: true,
