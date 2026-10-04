@@ -112,6 +112,20 @@ const serializeCourse = (course) => {
   };
 };
 
+// Resolve a unique slug, excluding the current document (for updates)
+const resolveUniqueSlug = async (desiredSlug, excludeId = null) => {
+  let slug = createSlug(desiredSlug);
+
+  const query = excludeId ? { slug, _id: { $ne: excludeId } } : { slug };
+  const existing = await Course.findOne(query);
+
+  if (existing) {
+    slug = `${slug}-${Date.now()}`;
+  }
+
+  return slug;
+};
+
 const getCourses = async (req, res) => {
   const courses = await Course.find({ isVisible: true }).sort({
     createdAt: -1,
@@ -160,6 +174,7 @@ const createCourse = async (req, res) => {
   const {
     title,
     dropdownName,
+    slug,
     category,
     description,
     duration,
@@ -184,10 +199,15 @@ const createCourse = async (req, res) => {
   const imageFile = getUploadedFile(req, "image");
   const brochureFile = getUploadedFile(req, "brochure");
 
+  // Use admin-provided slug if given, otherwise derive from title
+  const finalSlug = await resolveUniqueSlug(
+    slug && slug.trim() ? slug : title
+  );
+
   const course = await Course.create({
     title,
     dropdownName: dropdownName || title,
-    slug: createSlug(title),
+    slug: finalSlug,
     category,
     description,
     duration,
@@ -234,6 +254,7 @@ const updateCourse = async (req, res) => {
   const {
     title,
     dropdownName,
+    slug,
     category,
     description,
     duration,
@@ -251,7 +272,16 @@ const updateCourse = async (req, res) => {
 
   if (title !== undefined) {
     course.title = title;
-    course.slug = createSlug(title);
+  }
+
+  // Slug is now independently editable. If admin cleared it, fall back to
+  // regenerating from the title. If they typed a custom one, use that.
+  if (slug !== undefined) {
+    const desiredSlug = slug.trim() ? slug : title || course.title;
+
+    if (createSlug(desiredSlug) !== course.slug) {
+      course.slug = await resolveUniqueSlug(desiredSlug, course._id);
+    }
   }
 
   if (dropdownName !== undefined) {
