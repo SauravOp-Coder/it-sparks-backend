@@ -3,6 +3,19 @@ import Blog from "../models/Blog.js";
 import createSlug from "../utils/createSlug.js";
 import { cloudinary } from "../config/cloudinary.js";
 
+const resolveUniqueSlug = async (desiredSlug, excludeId = null) => {
+  let slug = createSlug(desiredSlug);
+
+  const query = excludeId ? { slug, _id: { $ne: excludeId } } : { slug };
+  const existing = await Blog.findOne(query);
+
+  if (existing) {
+    slug = `${slug}-${Date.now()}`;
+  }
+
+  return slug;
+};
+
 const getBlogs = async (req, res) => {
   const blogs = await Blog.find({ isVisible: true }).sort({
     publishedDate: -1,
@@ -51,6 +64,7 @@ const getSingleBlog = async (req, res) => {
 const createBlog = async (req, res) => {
   const {
     title,
+    slug,
     category,
     shortDescription,
     content,
@@ -68,17 +82,13 @@ const createBlog = async (req, res) => {
     );
   }
 
-  let slug = createSlug(title);
-
-  const existingBlog = await Blog.findOne({ slug });
-
-  if (existingBlog) {
-    slug = `${slug}-${Date.now()}`;
-  }
+  const finalSlug = await resolveUniqueSlug(
+    slug && slug.trim() ? slug : title
+  );
 
   const blog = await Blog.create({
     title,
-    slug,
+    slug: finalSlug,
     category,
     shortDescription,
     content,
@@ -116,6 +126,7 @@ const updateBlog = async (req, res) => {
 
   const {
     title,
+    slug,
     category,
     shortDescription,
     content,
@@ -128,7 +139,15 @@ const updateBlog = async (req, res) => {
 
   if (title && title !== blog.title) {
     blog.title = title;
-    blog.slug = createSlug(title);
+  }
+
+  // Slug is now independently editable, same as courses
+  if (slug !== undefined) {
+    const desiredSlug = slug.trim() ? slug : title || blog.title;
+
+    if (createSlug(desiredSlug) !== blog.slug) {
+      blog.slug = await resolveUniqueSlug(desiredSlug, blog._id);
+    }
   }
 
   blog.category = category ?? blog.category;
