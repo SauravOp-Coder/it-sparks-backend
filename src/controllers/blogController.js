@@ -34,6 +34,62 @@ const parseFaqs = (value) => {
   }
 };
 
+const normalizeSectionType = (type) => {
+  const value = String(type || "").toLowerCase();
+
+  if (value === "heading") return "heading";
+  if (value === "subheading") return "subheading";
+  if (value === "paragraph") return "paragraph";
+  if (value === "list") return "bulletList";
+  if (value === "bulletlist") return "bulletList";
+  if (value === "bullet") return "bulletList";
+  if (value === "numberedlist") return "numberedList";
+  if (value === "numbered") return "numberedList";
+  if (value === "highlight") return "highlight";
+
+  return "paragraph";
+};
+
+const parseContentSections = (value) => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((section, index) => {
+        const type = normalizeSectionType(section.type);
+
+        return {
+          type,
+          title: section.title || "",
+          content: section.content || "",
+          items: Array.isArray(section.items)
+            ? section.items.filter(Boolean)
+            : section.itemsText
+            ? section.itemsText
+                .split("\n")
+                .map((item) => item.trim())
+                .filter(Boolean)
+            : [],
+          textCase: section.textCase || "normal",
+          order: index,
+        };
+      })
+      .filter((section) => {
+        if (section.type === "bulletList" || section.type === "numberedList") {
+          return section.items.length > 0;
+        }
+
+        return section.title || section.content;
+      });
+  } catch (error) {
+    return [];
+  }
+};
+
 const getBlogs = async (req, res) => {
   const blogs = await Blog.find({ isVisible: true }).sort({
     publishedDate: -1,
@@ -86,6 +142,7 @@ const createBlog = async (req, res) => {
     category,
     shortDescription,
     content,
+    contentSections,
     publishedDate,
     isVisible,
     metaTitle,
@@ -94,11 +151,16 @@ const createBlog = async (req, res) => {
     faqs,
   } = req.body;
 
-  if (!title || !category || !shortDescription || !content) {
+  const sections = parseContentSections(contentSections);
+
+  if (!title || !category || !shortDescription) {
     res.status(400);
-    throw new Error(
-      "Title, category, short description, and content are required"
-    );
+    throw new Error("Title, category, and short description are required");
+  }
+
+  if (sections.length === 0 && !(content && content.trim())) {
+    res.status(400);
+    throw new Error("Please add at least one content section");
   }
 
   const finalSlug = await resolveUniqueSlug(
@@ -110,7 +172,8 @@ const createBlog = async (req, res) => {
     slug: finalSlug,
     category,
     shortDescription,
-    content,
+    content: content || "",
+    contentSections: sections,
     image: req.file
       ? {
           url: req.file.path,
@@ -150,6 +213,7 @@ const updateBlog = async (req, res) => {
     category,
     shortDescription,
     content,
+    contentSections,
     publishedDate,
     isVisible,
     metaTitle,
@@ -174,6 +238,17 @@ const updateBlog = async (req, res) => {
   blog.shortDescription = shortDescription ?? blog.shortDescription;
   blog.content = content ?? blog.content;
   blog.publishedDate = publishedDate ?? blog.publishedDate;
+
+  if (contentSections !== undefined) {
+    const sections = parseContentSections(contentSections);
+
+    if (sections.length === 0 && !(blog.content && blog.content.trim())) {
+      res.status(400);
+      throw new Error("Please add at least one content section");
+    }
+
+    blog.contentSections = sections;
+  }
 
   if (metaTitle !== undefined) blog.metaTitle = metaTitle;
   if (metaDescription !== undefined) blog.metaDescription = metaDescription;
